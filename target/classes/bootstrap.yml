@@ -1,0 +1,62 @@
+server:
+  port: 8087
+  http2:
+    enabled: true
+  ssl:
+    enabled: true
+    client-auth: none
+    key-store: file:/Users/20967134/Documents/ssl/gateway.p12
+    key-store-type: PKCS12
+    key-store-password: 123456
+    trust-store: file:/Users/20967134/Documents/ssl/gateway.p12
+    trust-store-type: PKCS12
+    trust-store-password: 123456
+    key-alias: gateway-server
+---
+spring:
+  application:
+    name: gateway-service
+  profiles:
+    include:
+      - dev
+    active: dev
+  cloud:
+    config:
+      uri: https://localhost:8086
+#      uri: http://localhost:8086
+      fail-fast: true
+      retry:
+        max-attempts: 20
+        max-interval: 15000
+        initial-interval: 10000
+---
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+          lower-case-service-id: true
+      httpclient:
+        ssl:
+          handshake-timeout: 10000
+          close-notify-flush-timeout: 3000
+          close-notify-read-timeout: 0
+          use-insecure-trust-manager: true
+---
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: registration_route
+          uri: lb://registration-service/registration
+          predicates:
+            - Path=/registration
+        - id: authentification_route
+          uri: lb://authentification-service/
+          predicates:
+            - Path=/**
+        - id: hotelgate_route
+          uri: lb://hotelgate-service/
+          predicates:
+            - Path=/hotel
